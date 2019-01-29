@@ -26,6 +26,10 @@ func (mvf *multiValueFlag) Set(value string) error {
 	return nil
 }
 
+const (
+	zeroTime = time.Time{}
+)
+
 var (
 	// ignores keeps track of all the processes that we need to ignore.  The
 	// given string is compiled into a regex before it is matched.
@@ -103,7 +107,7 @@ func main() {
 	ticker := time.NewTicker(refresh)
 	defer ticker.Stop()
 
-	var idleTime *time.Time
+	idleTime := time.Time{}
 
 	// TODO: Handle signal for interrupt etc.
 	for {
@@ -112,16 +116,16 @@ func main() {
 			idle, err := isGPUIdle(count)
 			fatalOnErr(err)
 
-			if idle && idleTime == nil {
+			if idle && idleTime.IsZero() {
 				println("GPU is idle ...")
 				idleTime = time.Now()
 			} else {
 				println("GPU is busy ...")
-				idleTime = nil
+				idleTime = zeroTime
 			}
 
-			if idleTime != nil {
-				if time.Now().Sub(*idleTime) > timeout {
+			if !idleTime.IsZero() {
+				if time.Now().Sub(idleTime) > timeout {
 					println("GPU idle for %v time... shut down now!\n", timeout)
 				}
 			}
