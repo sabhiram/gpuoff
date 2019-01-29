@@ -33,6 +33,9 @@ var (
 
 	// refresh keeps track of the refresh interval where we check for GPU idle.
 	refresh time.Duration
+
+	// timeout keeps track of how long the GPU can stay idle before a shutdown.
+	timeout time.Duration
 )
 
 // fatalOnErr fatals on errors.
@@ -45,17 +48,17 @@ func fatalOnErr(err error) {
 
 // isIgnoredProcessName returns if the input string matches one of the ignored
 // process regexes.
-func isIgnoredProcessName(pn string) bool {
+func isIgnoredProcessName(pn string) (bool, error) {
 	for _, ignore := range ignores {
 		matched, err := regexp.Match(ignore, []byte(pn))
 		if err != nil {
-			return false
+			return false, err
 		}
 		if matched == true {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 // isGPUIdle checks `count` number of devices to see if any of them are running
@@ -100,6 +103,8 @@ func main() {
 	ticker := time.NewTicker(refresh)
 	defer ticker.Stop()
 
+	var idleTime *time.Time
+
 	// TODO: Handle signal for interrupt etc.
 	for {
 		select {
@@ -107,10 +112,18 @@ func main() {
 			idle, err := isGPUIdle(count)
 			fatalOnErr(err)
 
-			if idle {
+			if idle && idleTime == nil {
 				println("GPU is idle ...")
+				idleTime = time.Now()
 			} else {
 				println("GPU is busy ...")
+				idleTime = nil
+			}
+
+			if idleTime != nil {
+				if time.Now().Sub(*idleTime) > timeout {
+					println("GPU idle for %v time... shut down now!\n", timeout)
+				}
 			}
 		}
 	}
@@ -121,5 +134,7 @@ func init() {
 	flag.Var(&ignores, "i", "list of processes to ignore (always on like XORG) (short)")
 	flag.DurationVar(&refresh, "refresh", 10*time.Second, "time in duration that we check the GPU for")
 	flag.DurationVar(&refresh, "r", 10*time.Second, "time in duration that we check the GPU for (short)")
+	flag.DurationVar(&timeout, "timeout", 15*time.Minute, "time to shutdown after GPUs are idle")
+	flag.DurationVar(&timeout, "t", 15*time.Minute, "time to shutdown after GPUs are idle (short)")
 	flag.Parse()
 }
