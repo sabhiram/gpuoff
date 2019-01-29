@@ -6,7 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
+	"syscall"
+    "time"
 
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 )
@@ -26,7 +27,7 @@ func (mvf *multiValueFlag) Set(value string) error {
 	return nil
 }
 
-const (
+var (
 	zeroTime = time.Time{}
 )
 
@@ -109,7 +110,6 @@ func main() {
 
 	idleTime := time.Time{}
 
-	// TODO: Handle signal for interrupt etc.
 	for {
 		select {
 		case <-ticker.C:
@@ -119,14 +119,15 @@ func main() {
 			if idle && idleTime.IsZero() {
 				println("GPU is idle ...")
 				idleTime = time.Now()
-			} else {
+			} else if !idle && !idleTime.IsZero() {
 				println("GPU is busy ...")
 				idleTime = zeroTime
 			}
 
 			if !idleTime.IsZero() {
 				if time.Now().Sub(idleTime) > timeout {
-					println("GPU idle for %v time... shut down now!\n", timeout)
+					println("GPU idle for %s time... shut down now!\n", timeout)
+                    fatalOnErr(syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF))
 				}
 			}
 		}
