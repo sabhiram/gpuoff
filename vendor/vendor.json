@@ -1,0 +1,19 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "kF1vk+8Xvb3nGBiw9+qbUc0SZ4M=",
+			"path": "github.com/NVIDIA/gpu-monitoring-tools",
+			"revision": "b70474fb8511ed7d9af02d8306c11b9828da3b66",
+			"revisionTime": "2018-11-14T02:13:04Z"
+		},
+		{
+			"checksumSHA1": "P8FATSSgpe5A17FyPrGpsX95Xw8=",
+			"path": "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml",
+			"revision": "b70474fb8511ed7d9af02d8306c11b9828da3b66",
+			"revisionTime": "2018-11-14T02:13:04Z"
+		}
+	],
+	"rootPath": "github.com/sabhiram/gpuoff"
+}
